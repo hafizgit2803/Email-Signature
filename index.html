@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shahana Group — Signature Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --ink:#1d1d1f; --sub:#6e6e73; --contact:#3a3a3c; --line:#d2d2d7;
+    --bg:#f5f5f7; --card:#ffffff; --accent:#1d1d1f; --field:#fbfbfd;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+       background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;}
+
+  .app{display:grid;grid-template-columns:380px 1fr;min-height:100vh}
+  @media(max-width:880px){.app{grid-template-columns:1fr}}
+
+  .panel{background:var(--card);border-right:1px solid var(--line);padding:34px 30px 60px;overflow-y:auto;}
+  .panel h1{font-size:21px;font-weight:600;letter-spacing:-.02em}
+  .panel .sub{color:var(--sub);font-size:13px;margin-top:5px;margin-bottom:26px}
+
+  .field{margin-bottom:18px}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--sub);margin-bottom:7px}
+  .field input[type=text]{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:11px;
+       font-size:14px;font-family:inherit;color:var(--ink);background:var(--field);
+       transition:border-color .15s,box-shadow .15s;}
+  .field input[type=text]:focus{outline:none;border-color:var(--accent);
+       box-shadow:0 0 0 3px rgba(29,29,31,.14)}
+
+  .mobilerow{display:flex;gap:8px;margin-bottom:10px;align-items:center}
+  .mobilerow input{flex:1;padding:11px 13px;border:1px solid var(--line);border-radius:11px;
+       font-size:14px;font-family:inherit;color:var(--ink);background:var(--field);
+       transition:border-color .15s,box-shadow .15s;}
+  .mobilerow input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(29,29,31,.14)}
+  .mobilerow .removeNum{flex:none;width:40px;height:40px;border:1px solid var(--line);background:var(--field);
+       border-radius:10px;color:var(--sub);cursor:pointer;font-size:18px;line-height:1;
+       display:flex;align-items:center;justify-content:center;transition:.15s;}
+  .mobilerow .removeNum:hover{background:#fdecea;color:#d9534f;border-color:#f3c8c4}
+  .addbtn{background:none;border:none;color:var(--accent);font-size:13px;font-weight:600;cursor:pointer;
+       padding:4px 2px;font-family:inherit;}
+  .addbtn:hover{text-decoration:underline}
+
+  .compound{display:flex;align-items:center;gap:8px}
+  .chip{flex:none;padding:11px 12px;background:var(--field);border:1px solid var(--line);border-radius:11px;
+       color:var(--sub);font-size:13.5px;white-space:nowrap;}
+
+  .download{width:100%;margin-top:8px;padding:13px;border:none;border-radius:12px;background:var(--ink);
+       color:#fff;font-size:14.5px;font-weight:600;font-family:inherit;cursor:pointer;transition:.15s;}
+  .download:hover{background:#000;transform:translateY(-1px)}
+  .download:active{transform:none}
+  .hint{font-size:11.5px;color:var(--sub);margin-top:10px;line-height:1.5}
+
+  .stage{display:flex;align-items:center;justify-content:center;padding:48px 32px;
+       background:radial-gradient(circle at 1px 1px,rgba(0,0,0,.05) 1px,transparent 0) 0 0/22px 22px,var(--bg);}
+  .stagewrap{text-align:center}
+  .stagelabel{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+       color:var(--sub);margin-bottom:18px}
+  .sigframe{display:inline-block;border-radius:18px;box-shadow:0 1px 2px rgba(0,0,0,.04),0 12px 40px rgba(0,0,0,.09)}
+  #sig{padding:40px 48px;background:#ffffff;border-radius:18px;display:inline-block;text-align:left}
+
+  /* signature type */
+  .sig-name{font-size:24px;font-weight:600;letter-spacing:-.01em;color:#1d1d1f}
+  .sig-title{font-size:17px;color:#6e6e73;margin-top:3px}
+  .sig-cos{font-size:17px;color:#1d1d1f;font-weight:500;margin-top:14px}
+  .sig-cos .dot{color:#c9c9ce;margin:0 8px}
+  .sig-group{font-size:20px;color:#3a3a3c;font-weight:600;letter-spacing:.01em;margin-top:4px}
+  .sig-rule{width:28px;height:2px;background:var(--accent);border-radius:2px;margin:16px 0 13px}
+  .sig-row{font-size:16.5px;color:var(--contact);line-height:2.05;white-space:nowrap}
+  .sig-row b{display:inline-block;width:20px;color:var(--accent);font-weight:700;font-size:13.5px}
+  .sig-tag{font-size:13.5px;color:#86868b;letter-spacing:.02em;margin-top:16px}
+
+  .inner-a{display:flex;align-items:stretch;gap:34px}
+  .logobox{width:105px;height:105px;flex:none;display:flex;align-items:center;justify-content:center;}
+  .logobox img{width:100%;height:100%;object-fit:contain}
+  .vdivider{width:1px;background:var(--line);flex:none;align-self:stretch}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="panel">
+    <h1>Signature generator</h1>
+    <div class="sub">Shahana Group &middot; M.T. Sweaters &amp; Banga Fashion</div>
+
+    <div class="field"><label>Full name</label><input type="text" id="fName" value="Shahana Rahman"></div>
+    <div class="field"><label>Designation</label><input type="text" id="fTitle" value="Managing Director"></div>
+
+    <div class="field">
+      <label>Mobile number(s)</label>
+      <div id="mobileList"></div>
+      <button type="button" class="addbtn" id="addMobileBtn">+ Add another number</button>
+    </div>
+
+    <div class="field">
+      <label>Email</label>
+      <div class="compound">
+        <input type="text" id="fEmail" value="shahana">
+        <span class="chip">@shahanagroup.com</span>
+      </div>
+    </div>
+
+    <button class="download" id="downloadBtn">Download signature (PNG)</button>
+    <div class="hint">Exports at 3&times; resolution on a white background, ready to drop into Outlook, Gmail, or Apple Mail.</div>
+  </div>
+
+  <div class="stage">
+    <div class="stagewrap">
+      <div class="stagelabel">Live preview</div>
+      <div class="sigframe"><div id="sig"></div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  var LOGO_SRC = "data:image/png;base64,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";
+  function $(id){return document.getElementById(id);}
+  function val(id){return $(id).value.trim();}
+  function esc(s){return s.replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+
+  /* ---------- mobile number rows ---------- */
+  var mobileContainer = $("mobileList");
+
+  function addMobileRow(value){
+    var isFirst = mobileContainer.children.length === 0;
+    var row = document.createElement("div");
+    row.className = "mobilerow";
+    var chip = document.createElement("span");
+    chip.className = "chip";
+    chip.textContent = "+880";
+    row.appendChild(chip);
+    var input = document.createElement("input");
+    input.type = "text";
+    input.value = value || "";
+    input.placeholder = "1XXX-XXXXXX";
+    input.addEventListener("input", render);
+    row.appendChild(input);
+    if(!isFirst){
+      var rm = document.createElement("button");
+      rm.type = "button"; rm.className = "removeNum"; rm.innerHTML = "&times;"; rm.title = "Remove number";
+      rm.addEventListener("click", function(){ row.remove(); render(); });
+      row.appendChild(rm);
+    }
+    mobileContainer.appendChild(row);
+  }
+  function getMobiles(){
+    return [].map.call(mobileContainer.querySelectorAll("input"), function(i){return i.value.trim();}).filter(Boolean);
+  }
+  $("addMobileBtn").addEventListener("click", function(){ addMobileRow(""); render(); });
+
+  /* ---------- text field bindings ---------- */
+  ["fName","fTitle","fEmail"].forEach(function(id){
+    $(id).addEventListener("input", render);
+  });
+
+  /* ---------- render preview ---------- */
+  function logoHTML(){
+    return '<div class="logobox"><img src="'+LOGO_SRC+'" alt="Shahana Group logo"></div>';
+  }
+  function nameHTML(){
+    return '<div class="sig-name">'+esc(val("fName")||" ")+'</div>'+
+           '<div class="sig-title">'+esc(val("fTitle")||" ")+'</div>';
+  }
+  var EMAIL_DOMAIN = "@shahanagroup.com";
+  var WEBSITE = "www.shahanagroup.com";
+  var ADDRESS = "Plot# 1703-1704, Gacha, Gazipur Sadar, Gazipur, Bangladesh";
+
+  function rowsHTML(){
+    var r = "";
+    getMobiles().forEach(function(num){ r += '<div class="sig-row"><b>M</b>+880 '+esc(num)+'</div>'; });
+    if(val("fEmail")) r += '<div class="sig-row"><b>E</b>'+esc(val("fEmail"))+EMAIL_DOMAIN+'</div>';
+    r += '<div class="sig-row"><b>W</b>'+WEBSITE+'</div>';
+    r += '<div class="sig-row"><b>A</b>'+ADDRESS+'</div>';
+    return r;
+  }
+  function metaHTML(){
+    return '<div class="sig-cos">M.T. Sweaters Ltd.<span class="dot">&middot;</span>Banga Fashion Ltd.</div>'+
+           '<div class="sig-group">Shahana Group</div>'+
+           '<div class="sig-rule"></div>'+ rowsHTML() +
+           '<div class="sig-tag">Crafted in Bangladesh.</div>';
+  }
+  function render(){
+    $("sig").innerHTML =
+      '<div class="inner-a">'+
+        logoHTML()+
+        '<div class="vdivider"></div>'+
+        '<div class="text">'+ nameHTML() + metaHTML() +'</div>'+
+      '</div>';
+  }
+
+  /* ---------- download ---------- */
+  $("downloadBtn").addEventListener("click", function(){
+    var node = $("sig"), btn = this, old = btn.textContent;
+    btn.textContent = "Rendering…";
+    html2canvas(node, {scale:3, backgroundColor:"#ffffff", logging:false, useCORS:true})
+      .then(function(canvas){
+        var name = (val("fName")||"signature").toLowerCase().replace(/[^a-z0-9]+/g,"-");
+        var a = document.createElement("a");
+        a.download = "signature-"+name+".png";
+        a.href = canvas.toDataURL("image/png");
+        a.click(); btn.textContent = old;
+      }).catch(function(){
+        btn.textContent = "Try again";
+        setTimeout(function(){btn.textContent = old;}, 1500);
+      });
+  });
+
+  /* ---------- init ---------- */
+  addMobileRow("1711 000000");
+  render();
+</script>
+</body>
+</html>
