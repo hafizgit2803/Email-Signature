@@ -103,7 +103,7 @@
     </div>
 
     <button class="download" id="downloadBtn">Download signature (PNG)</button>
-    <div class="hint">Exports at 3&times; resolution on a white background, ready to drop into Outlook, Gmail, or Apple Mail.</div>
+    <div class="hint">Downloads as a standard 600px-wide image — paste it directly into your Gmail, Outlook, or Apple Mail signature box.</div>
   </div>
 
   <div class="stage">
@@ -192,15 +192,31 @@
   }
 
   /* ---------- download ---------- */
+  var EXPORT_WIDTH = 600; // standard width for email-signature images
+
   $("downloadBtn").addEventListener("click", function(){
     var node = $("sig"), btn = this, old = btn.textContent;
     btn.textContent = "Rendering…";
-    html2canvas(node, {scale:3, backgroundColor:"#ffffff", logging:false, useCORS:true})
-      .then(function(canvas){
+    var rect = node.getBoundingClientRect();
+    var renderScale = (EXPORT_WIDTH * 2) / rect.width; // render at 2x target for crisp downscale
+
+    html2canvas(node, {scale: renderScale, backgroundColor:"#ffffff", logging:false, useCORS:true})
+      .then(function(raw){
+        var finalWidth = EXPORT_WIDTH;
+        var finalHeight = Math.round(raw.height * (finalWidth / raw.width));
+        var out = document.createElement("canvas");
+        out.width = finalWidth; out.height = finalHeight;
+        var ctx = out.getContext("2d");
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, finalWidth, finalHeight);
+        ctx.drawImage(raw, 0, 0, finalWidth, finalHeight);
+
         var name = (val("fName")||"signature").toLowerCase().replace(/[^a-z0-9]+/g,"-");
         var a = document.createElement("a");
         a.download = "signature-"+name+".png";
-        a.href = canvas.toDataURL("image/png");
+        a.href = out.toDataURL("image/png");
         a.click(); btn.textContent = old;
       }).catch(function(){
         btn.textContent = "Try again";
