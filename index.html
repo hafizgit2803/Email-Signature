@@ -12,6 +12,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Ne
   background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;}
 .app{display:grid;grid-template-columns:360px 1fr;min-height:100vh}
 @media(max-width:860px){.app{grid-template-columns:1fr}}
+
 .panel{background:var(--card);border-right:1px solid var(--line);padding:34px 28px 60px;overflow-y:auto;}
 .panel h1{font-size:21px;font-weight:600;letter-spacing:-.02em}
 .panel .sub{color:var(--sub);font-size:13px;margin-top:5px;margin-bottom:28px}
@@ -36,23 +37,44 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Ne
 .mobilerow .rm:hover{background:#fdecea;color:#d9534f;border-color:#f3c8c4}
 .addbtn{background:none;border:none;color:var(--ink);font-size:13px;font-weight:600;
   cursor:pointer;padding:3px 0;font-family:inherit;text-decoration:underline;text-underline-offset:3px;}
-.copybtn{width:100%;margin-top:8px;padding:13px;border:none;border-radius:12px;
+.selectbtn{width:100%;margin-top:8px;padding:13px;border:none;border-radius:12px;
   background:var(--ink);color:#fff;font-size:14.5px;font-weight:600;font-family:inherit;cursor:pointer;transition:.15s;}
-.copybtn:hover{background:#000;transform:translateY(-1px)}
-.copybtn.ok{background:#1a9e5c}
+.selectbtn:hover{background:#000;transform:translateY(-1px)}
+.selectbtn.ok{background:#1a9e5c}
 .hint{font-size:11.5px;color:var(--sub);margin-top:10px;line-height:1.7}
 .hint b{font-weight:600;color:var(--ink)}
-.stage{display:flex;align-items:flex-start;justify-content:center;padding:52px 40px;background:#fff;}
-.stagewrap{max-width:700px;width:100%}
+.hint .step{display:flex;align-items:baseline;gap:8px;margin-bottom:4px;}
+.hint .num{flex:none;width:16px;height:16px;background:var(--ink);color:#fff;border-radius:50%;
+  font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+
+.stage{display:grid;grid-template-rows:auto 1fr;background:#fff;}
+.stage-top{padding:36px 40px 0;}
 .stagelabel{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--sub);margin-bottom:16px}
-.preview-card{display:inline-block;padding:36px 40px;}
+
+/* The copyzone — this is what the user actually copies from */
+.copyzone-wrap{padding:20px 40px 40px;}
+.copyzone-label{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--sub);margin-bottom:12px;display:flex;align-items:center;gap:10px;}
+.copyzone-label::after{content:'';flex:1;height:1px;background:var(--line);}
+.copyzone{
+  border:2px dashed var(--line);border-radius:14px;padding:32px 36px;
+  cursor:text;transition:border-color .2s;
+  /* critical: user can click-to-select and Ctrl+C from here */
+  user-select:text;-webkit-user-select:text;
+}
+.copyzone:focus{outline:none;border-color:#1d1d1f;}
+.copyzone.selected{border-color:#1d1d1f;border-style:solid;}
+.copyzone-hint{font-size:12px;color:var(--sub);margin-top:12px;text-align:center;}
 </style>
 </head>
 <body>
 <div class="app">
+
+  <!-- FORM -->
   <div class="panel">
     <h1>Signature generator</h1>
     <div class="sub">Shahana Group &middot; M.T. Sweaters &amp; Banga Fashion</div>
+
     <div class="field"><label>Full name</label>
       <input type="text" id="fName" value="Shahana Rahman"></div>
     <div class="field"><label>Designation</label>
@@ -68,32 +90,41 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Ne
         <span class="chip">@shahanagroup.com</span>
       </div>
     </div>
-    <button class="copybtn" id="copyBtn">Copy signature</button>
+
+    <button class="selectbtn" id="selectBtn">① Select signature</button>
     <div class="hint">
-      Click copy, then paste directly into:<br>
-      <b>Gmail</b> — Settings → See all settings → Signature<br>
-      <b>Outlook</b> — File → Options → Mail → Signatures<br>
-      <b>Apple Mail</b> — Settings → Signatures
+      <div class="step"><span class="num">1</span><span>Click <b>Select signature</b> above</span></div>
+      <div class="step"><span class="num">2</span><span>Press <b>Ctrl+C</b> (Windows) or <b>⌘+C</b> (Mac)</span></div>
+      <div class="step"><span class="num">3</span><span>Paste into <b>Gmail / Outlook / Apple Mail</b> signature settings</span></div>
     </div>
   </div>
+
+  <!-- PREVIEW + COPYZONE -->
   <div class="stage">
-    <div class="stagewrap">
-      <div class="stagelabel">Live preview</div>
-      <div class="preview-card"><div id="preview"></div></div>
+    <div class="stage-top">
+      <div class="stagelabel">Live preview — updates as you type</div>
+      <div id="preview"></div>
+    </div>
+    <div class="copyzone-wrap">
+      <div class="copyzone-label">Copy from here</div>
+      <div class="copyzone" id="copyzone" tabindex="0"></div>
+      <div class="copyzone-hint">Click "Select signature" then press Ctrl+C &nbsp;·&nbsp; or click inside this box and press Ctrl+A then Ctrl+C</div>
     </div>
   </div>
+
 </div>
+
 <script>
 var LOGO  = "data:image/png;base64,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";
-var SIG   = '<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;font-family:-apple-system,BlinkMacSystemFont,\'Helvetica Neue\',Helvetica,Arial,sans-serif;">\n<tr>\n  <td style="vertical-align:middle;padding-right:26px;">\n    <img src="data:image/png;base64,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" width="105" height="71" alt="SG" style="display:block;border:0;width:105px;height:71px;">\n  </td>\n  <td style="width:1px;background-color:#d2d2d7;font-size:0;line-height:0;">&nbsp;</td>\n  <td style="vertical-align:top;padding-left:26px;">\n    <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">\n      <tr><td colspan="2" style="font-size:24px;font-weight:600;color:#1d1d1f;letter-spacing:-0.3px;padding-bottom:3px;white-space:nowrap;">{{NAME}}</td></tr>\n      <tr><td colspan="2" style="font-size:17px;color:#6e6e73;padding-bottom:14px;white-space:nowrap;">{{TITLE}}</td></tr>\n      <tr><td colspan="2" style="font-size:17px;font-weight:500;color:#1d1d1f;padding-bottom:4px;white-space:nowrap;">M.T. Sweaters Ltd.&nbsp;&nbsp;&middot;&nbsp;&nbsp;Banga Fashion Ltd.</td></tr>\n      <tr><td colspan="2" style="font-size:20px;font-weight:600;color:#3a3a3c;padding-bottom:14px;white-space:nowrap;">Shahana Group</td></tr>\n      <tr><td colspan="2" style="padding-bottom:13px;"><table cellpadding="0" cellspacing="0"><tr><td style="width:28px;height:2px;background-color:#1d1d1f;font-size:0;line-height:0;">&nbsp;</td></tr></table></td></tr>\n      {{ROWS}}\n      <tr><td colspan="2" style="font-size:13.5px;color:#86868b;letter-spacing:0.3px;padding-top:13px;">Crafted in Bangladesh.</td></tr>\n    </table>\n  </td>\n</tr>\n</table>';
-var ROW_M = '<tr>\n      <td style="font-size:13px;font-weight:700;color:#1d1d1f;padding-right:12px;padding-bottom:5px;vertical-align:top;white-space:nowrap;">M</td>\n      <td style="font-size:16.5px;color:#3a3a3c;padding-bottom:5px;">+880&nbsp;{{NUM}}</td>\n    </tr>';
-var ROW_E = '<tr>\n      <td style="font-size:13px;font-weight:700;color:#1d1d1f;padding-right:12px;padding-bottom:5px;vertical-align:top;white-space:nowrap;">E</td>\n      <td style="font-size:16.5px;color:#3a3a3c;padding-bottom:5px;"><a href="mailto:{{EMAIL}}" style="color:#3a3a3c;text-decoration:none;">{{EMAIL}}</a></td>\n    </tr>';
-var ROW_W = '<tr>\n      <td style="font-size:13px;font-weight:700;color:#1d1d1f;padding-right:12px;padding-bottom:5px;vertical-align:top;white-space:nowrap;">W</td>\n      <td style="font-size:16.5px;color:#3a3a3c;padding-bottom:5px;"><a href="https://www.shahanagroup.com" style="color:#3a3a3c;text-decoration:none;">www.shahanagroup.com</a></td>\n    </tr>';
-var ROW_A = '<tr>\n      <td style="font-size:13px;font-weight:700;color:#1d1d1f;padding-right:12px;padding-bottom:5px;vertical-align:top;white-space:nowrap;">A</td>\n      <td style="font-size:16.5px;color:#3a3a3c;padding-bottom:5px;">Plot# 1703-1704, Gacha, Gazipur Sadar, Gazipur, Bangladesh</td>\n    </tr>';
+var SIG   = '<table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;font-family:-apple-system,BlinkMacSystemFont,\'Helvetica Neue\',Helvetica,Arial,sans-serif;"><tr><td style="vertical-align:middle;padding-right:26px;"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAV0AAADsCAYAAADXaXXTAAAF1ElEQVR42u3cXW7cOBCFUcngNoysJkvK7gPLLzEQB4G7ZUrFYvEcII+DmVHIr28rP/vr648NgBgvHgGA6AKILgCiCyC6AIjuVw4/Svz45SiT2b7Qbxk7/HSvcaadJTKfwyawiK2zxC3nZq8cXRdDbJ0lpjB7dF0QsXWOEF2hZYLYOkeIrkuC2CK6Ysv8wXWGEF0XBbFFdMWWGsF1hhBdlwXrFvJE10XBukV0BZcJguv8ILouC4ILuaLrsiC2LGnEX+3owiC4WLqCS/LgOjtYui4Nggs5o+vSILgQFF2XBmcH/mguDQlXrnODpSu4CC7kja6Lg+BCUHRdHAQXgpcu+KCGgOi6PJxduc4Moiu4BAUXRBcC+aBGdF0eglauM4PoCi6CC3MsXfAhDQHRdYE4u3JBdAUXKxfmWLrw7MoVXOiIrgsEYOli5YLoAtARXasFKxcsXRISXOiMrksE0PEtsHk2Q75yV1ipe+c/z3pnCtF1IVx0z5280bVcXA5nxTnC0nVJcIYQXRfFysX5oSO6h8sCzg+Wrgtj5To7iK4Lg7MD//fMH444XBqcE2cHS9elwbmh5NJ1cbBynRtE18XBuWE+j14vHC4Ozogzg6Xr8uDMILouD84MiC73WenVguAiui4QzguiC8C3olv1q6PVco1VXi04L1i6ILiIrkuEswKiyy2qv1oQXEQXQHTBygXRdZlu5e/NBdEFH8yILgguiC4dvFoA0QUrF9EFQHTBykV0o3gf6fmB6AKILqzBqwVEF0B06/Be0nOzchFdANEFQHR9VeYCXi0gugCia+3iWYHoigkgujAH73NJG90VDqe1C1i6wguIrvACiK7wcoL3uYiu8HoeILprLwOhASzdAeEVX0B0xReoHl2/+CC+wEWaR3A6vj6MANEdHGAhzm8veuaY7Ny1E/+gn/Bal8IHBAzgF9KwqiBpdC0jAEsXoG50rV0ASxegbnStXQBLF6BudK1dgOClK7wAgdGFit42fzCExNG1dqnm40wLL2mXrvBSlfCSMrrCi/BCcHSFF+GF4OgiMp4JBEfX2kV4IXjpCi/CC4HR/Qiv+CK8EBRdqxfhhQHRFV6EF4KjK7wILwRHV3gRXtjif5+uX2BDeBHdAYQXEF2rF6xd6kZXfBFeRHdwfEF4EV2rF6BmdMUXa5fSWvL/vt0hBixd6xesXcpH99/4CjDCy3Ta5P/9Xj8Alq4FXOJZYu1i6XZFw8EHRFeIWWjt+gbBUtH1NRoQXbB2jYQHz6yUF/cAQHQBRBd8TfV1GdEFEF3A2kV0AUQXQHRZnT84AqILZT5svNcVXShP6BBdANEFQHShGK87RBc+qfg7GIQO0QUQXQBEFwL4gyGILlzIe11EF6sPRBd82IDowgW8YkB0AUQX1uUVA6KL+FzIKwZEF0B0oa5Ha9crBkSXIcQHRBesXUQXANEFaxfRZS67/38QXYhauyKO6IJQIrqITu21K7yILggvoou16zl4hoguXLR2QXQhOLwWK6JL+q/WwovoAmEfQiItumDtdq5dMUV0YVB4xRfRhcDwfrV6BVl0octqETk8G0QX4sP7nfe8IozoYu0GrF7veRFdCA4viC7W7oXhFV9EF8QX0cXaFV9EF4RXfInQPAIIia8PJUSXW9euhfc4wCIsuk8dEgSV+yLsGYsuWLsJQkwRfiGNO4NgsYHoAogu1i6ILggviC6A6GLtWrsguggviC5LE15EFwLXrvAiujAgvCC6EBheaxfRBeEF0aU24UV0IXDtCi+iC8ILoovwguiC8ILoIrwgugiv8CK6kDu84ovoQmB4rV5EF4QXRBfhBdEF4QXRRXhBdBHek+EVX0QXAsNr9SK6MCi84ovoQmB4rV5EFzrCa/UiujDZ6hVfRBcCw/t3fAUY0YWg8AowaTSPgMnCe1Uw9xvjDqJLqfjetVT3J//9ILoIbxCvJujinS6z+r1t20+PgYpL1yc7gKULILoAiC6A6AIs5x119FFA4Dt3owAAAABJRU5ErkJggg==" width="105" height="71" alt="SG" style="display:block;border:0;width:105px;height:71px;"></td><td style="width:1px;background-color:#d2d2d7;font-size:0;line-height:0;">&nbsp;</td><td style="vertical-align:top;padding-left:26px;"><table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr><td colspan="2" style="font-size:24px;font-weight:600;color:#1d1d1f;letter-spacing:-0.3px;padding-bottom:3px;white-space:nowrap;">{{NAME}}</td></tr><tr><td colspan="2" style="font-size:17px;color:#6e6e73;padding-bottom:14px;white-space:nowrap;">{{TITLE}}</td></tr><tr><td colspan="2" style="font-size:17px;font-weight:500;color:#1d1d1f;padding-bottom:4px;white-space:nowrap;">M.T. Sweaters Ltd.&nbsp;&nbsp;&middot;&nbsp;&nbsp;Banga Fashion Ltd.</td></tr><tr><td colspan="2" style="font-size:20px;font-weight:600;color:#3a3a3c;padding-bottom:14px;white-space:nowrap;">Shahana Group</td></tr><tr><td colspan="2" style="padding-bottom:13px;"><table cellpadding="0" cellspacing="0"><tr><td style="width:28px;height:2px;background-color:#1d1d1f;font-size:0;line-height:0;">&nbsp;</td></tr></table></td></tr>{{ROWS}}<tr><td colspan="2" style="font-size:13.5px;color:#86868b;letter-spacing:0.3px;padding-top:13px;">Crafted in Bangladesh.</td></tr></table></td></tr></table>';
+var ROW_M = '<tr><td style="font-size:13px;font-weight:700;color:#1d1d1f;padding-right:12px;padding-bottom:5px;vertical-align:top;white-space:nowrap;">M</td><td style="font-size:16.5px;color:#3a3a3c;padding-bottom:5px;">+880&nbsp;{{NUM}}</td></tr>';
+var ROW_E = '<tr><td style="font-size:13px;font-weight:700;color:#1d1d1f;padding-right:12px;padding-bottom:5px;vertical-align:top;white-space:nowrap;">E</td><td style="font-size:16.5px;color:#3a3a3c;padding-bottom:5px;"><a href="mailto:{{EMAIL}}" style="color:#3a3a3c;text-decoration:none;">{{EMAIL}}</a></td></tr>';
+var ROW_W = '<tr><td style="font-size:13px;font-weight:700;color:#1d1d1f;padding-right:12px;padding-bottom:5px;vertical-align:top;white-space:nowrap;">W</td><td style="font-size:16.5px;color:#3a3a3c;padding-bottom:5px;"><a href="https://www.shahanagroup.com" style="color:#3a3a3c;text-decoration:none;">www.shahanagroup.com</a></td></tr>';
+var ROW_A = '<tr><td style="font-size:13px;font-weight:700;color:#1d1d1f;padding-right:12px;padding-bottom:5px;vertical-align:top;white-space:nowrap;">A</td><td style="font-size:16.5px;color:#3a3a3c;padding-bottom:5px;">Plot# 1703-1704, Gacha, Gazipur Sadar, Gazipur, Bangladesh</td></tr>';
 
 function $(id){return document.getElementById(id);}
 function val(id){return $(id).value.trim();}
-function esc(s){return s.replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+function esc(s){return s.replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
 
 function addMobileRow(v){
   var first=$("mobileList").children.length===0;
@@ -131,39 +162,40 @@ function buildSig(){
     .replace("{{ROWS}}", rows);
 }
 
-function render(){ $("preview").innerHTML = buildSig(); }
-
-$("copyBtn").addEventListener("click",function(){
-  var html=buildSig(), btn=this;
-  function done(){
-    btn.textContent="Copied! Now paste into your email app ✓";
-    btn.classList.add("ok");
-    setTimeout(function(){btn.textContent="Copy signature";btn.classList.remove("ok");},3000);
-  }
-  if(navigator.clipboard && window.ClipboardItem){
-    var blob=new Blob([html],{type:"text/html"});
-    navigator.clipboard.write([new ClipboardItem({"text/html":blob})])
-      .then(done).catch(function(){fallback(html,btn);});
-  } else { fallback(html,btn); }
-});
-
-function fallback(html,btn){
-  var d=document.createElement("div");
-  d.contentEditable="true";
-  d.style.cssText="position:fixed;left:-9999px;top:-9999px;opacity:0;pointer-events:none;";
-  d.innerHTML=html; document.body.appendChild(d); d.focus();
-  var range=document.createRange(); range.selectNodeContents(d);
-  var sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
-  var ok=document.execCommand("copy");
-  sel.removeAllRanges(); document.body.removeChild(d);
-  if(ok){
-    btn.textContent="Copied! Now paste into your email app ✓"; btn.classList.add("ok");
-    setTimeout(function(){btn.textContent="Copy signature";btn.classList.remove("ok");},3000);
-  } else {
-    btn.textContent="Select the preview and copy manually (Ctrl+C)";
-    setTimeout(function(){btn.textContent="Copy signature";},4000);
-  }
+function render(){
+  var html = buildSig();
+  $("preview").innerHTML   = html;
+  $("copyzone").innerHTML  = html;
 }
+
+$("selectBtn").addEventListener("click", function(){
+  var zone = $("copyzone");
+  var btn  = this;
+
+  // Select all content inside the copyzone
+  var range = document.createRange();
+  range.selectNodeContents(zone);
+  var sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  zone.classList.add("selected");
+
+  // Try to auto-copy for browsers that support it
+  try {
+    var ok = document.execCommand("copy");
+    if(ok){
+      btn.textContent = "✓ Copied — now paste into your email app";
+      btn.classList.add("ok");
+      setTimeout(function(){btn.textContent="① Select signature";btn.classList.remove("ok");zone.classList.remove("selected");},4000);
+      return;
+    }
+  } catch(e){}
+
+  // If auto-copy not supported, selection is still highlighted — user just presses Ctrl+C
+  btn.textContent = "✓ Selected — now press Ctrl+C or ⌘+C";
+  btn.classList.add("ok");
+  setTimeout(function(){btn.textContent="① Select signature";btn.classList.remove("ok");},5000);
+});
 
 addMobileRow("1711-000000");
 render();
